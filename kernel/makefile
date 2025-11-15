@@ -53,15 +53,6 @@ KERNEL_BLOBBY_PUBKEY := $(KERNEL_SHARED_RESOURCES)/blobby-linux-signing-key.gpg
 
 KERNEL_FIRMWARES := $(PRAWNOS_KERNEL_BUILD)/prawnos-firmwares
 
-ATH9K_EXTRACTED := $(PRAWNOS_ATH9K_BUILD)/.ath9k_extracted
-ATH9K_TAR := $(KERNEL_SHARED_RESOURCES)/open-ath9k-htc-firmware.tar.gz
-ATH9K := open-ath9k-htc-firmware
-ATH9K_9271_FW := $(PRAWNOS_ATH9K_BUILD)/target_firmware/htc_9271.fw
-ATH9K_7010_FW := $(PRAWNOS_ATH9K_BUILD)/target_firmware/htc_7010.fw
-ATH9K_BUILT := $(ATH9K_9271_FW)
-ATH9K_BUILD_LOG := $(PRAWNOS_BUILD_LOGS)/ath9k-log.txt
-
-KERNEL_ATH9K_INSTALLED := $(KERNEL_FIRMWARES)/htc_9271.fw
 
 MARVELL_8997_DEB := $(PRAWNOS_BUILD_SHARED)/firmware-libertas_20210315-3_all.deb
 MARVELL_8997 := $(PRAWNOS_BUILD_SHARED)/firmware-libertas
@@ -76,8 +67,6 @@ KERNEL_REGDB_INSTALLED := $(KERNEL_FIRMWARES)/regulatory.db
 .PHONY: kernel
 kernel: $(PRAWNOS_KERNEL_BUILT)
 
-.PHONY: ath9k
-ath9k: $(ATH9K_BUILT)
 
 .PHONY: marvell
 marvell: $(MARVELL_8997_EXTRACTED)
@@ -87,9 +76,6 @@ patch_kernel: $(KERNEL_PATCHED)
 
 .PHONY: extract_kernel
 extract_kernel: $(KERNEL_EXTRACTED)
-
-.PHONY: extract_ath9k
-extract_ath9k: $(ATH9K_EXTRACTED)
 
 .PHONY: kernel_image_package
 kernel_image_package: $(PRAWNOS_KERNEL_BUILT)
@@ -115,19 +101,6 @@ clean_kernel:
 clean_kernel_image_package:
 	$(MAKE) -C $(PRAWNOS_KERNEL_PACKAGE_IMAGE) clean
 
-.PHONY: clean_ath9k
-clean_ath9k:
-	rm -rf $(PRAWNOS_ATH9K_BUILD)
-	$(MAKE) -C $(PRAWNOS_KERNEL_PACKAGE_IMAGE) clean
-
-### DEVELOPER RULES
-
-.PHONY: update_ath9k_tar
-update_ath9k_tar:
-	mkdir -p tmp/$(ATH9K)
-	git clone --depth 1 https://github.com/qca/open-ath9k-htc-firmware.git tmp/$(ATH9K)
-	cd tmp && tar czvf $(ATH9K_SOURCE) $(ATH9K)
-	rm -rf tmp/
 
 #TODO: package perf/linux-tools
 .PHONY: perf
@@ -250,19 +223,6 @@ $(KERNEL_CONFIG_GENERATED): $(KERNEL_EXTRACTED)
   endif
 	touch $(KERNEL_CONFIG_GENERATED)
 
-$(ATH9K_EXTRACTED): | $(PRAWNOS_BUILD_LOGS) $(PRAWNOS_BUILD_SOURCES) $(PRAWNOS_BUILD_SHARED)
-	tar -xvf $(ATH9K_TAR) -C $(PRAWNOS_BUILD_SHARED)
-	touch $(ATH9K_EXTRACTED)
-
-$(ATH9K_BUILT): $(ATH9K_EXTRACTED)
-	rm -rf $(ATH9K_BUILD_LOG)
-	$(PRAWNOS_KERNEL_SCRIPTS_BUILD_ATH9K) $(PRAWNOS_ATH9K_BUILD) 2>&1 | tee $(ATH9K_BUILD_LOG)
-
-$(KERNEL_ATH9K_INSTALLED): $(KERNEL_PATCHED) $(ATH9K_BUILT) | $(KERNEL_FIRMWARES)
-	cp $(ATH9K_9271_FW) $(KERNEL_FIRMWARES)/
-# skip the older 7010 FW to save kernel space
-# cp $(ATH9K_7010_FW) $(KERNEL_FIRMWARES)/
-
 $(MARVELL_8997_DEB):
 	wget $(WGET_OPTS) http://ftp.us.debian.org/debian/pool/non-free/f/firmware-nonfree/firmware-libertas_20210315-3_all.deb -O $(MARVELL_8997_DEB)
 
@@ -279,7 +239,7 @@ $(KERNEL_REGDB_INSTALLED): | $(KERNEL_FIRMWARES)
 	$(PRAWNOS_KERNEL_SCRIPTS_EXTRACT_REGDB) $(PRAWNOS_IMAGE_BASE) $(KERNEL_FIRMWARES)
 
 
-$(PRAWNOS_KERNEL_BUILT): $(KERNEL_ATH9K_INSTALLED) $(KERNEL_MARVELL_INSTALLED) $(KERNEL_REGDB_INSTALLED) $(PRAWNOS_INITRAMFS_IMAGE) $(KERNEL_CONFIG_GENERATED)
+$(PRAWNOS_KERNEL_BUILT): $(KERNEL_MARVELL_INSTALLED) $(KERNEL_REGDB_INSTALLED) $(PRAWNOS_INITRAMFS_IMAGE) $(KERNEL_CONFIG_GENERATED)
 # rebuilding the kernel means we also need to rebuild the kernel package
 	$(MAKE) -C $(PRAWNOS_KERNEL_PACKAGE_IMAGE) clean
 	rm -rf $(KERNEL_BUILD_LOG)

@@ -100,7 +100,22 @@ if [ "$BOOTLOADER" == "coreboot" ]; then
     #copy in the resources, initramfs
     cp $INITRAMFS .
     cp $RESOURCES/kernel.its .
+    [ -d brcm ] || mkdir brcm
+    #cp $RESOURCES/brcmfmac4354-sdio.txt 'brcm/brcmfmac4354-sdio.google,veyron-mickey-rev8.txt'
+    cp -t brcm $RESOURCES/brcm/*.hcd
+    cp brcm/brcmfmac4354-sdio.txt brcm/brcmfmac4354-sdio.google,veyron-mickey-rev8.txt
+    #cp brcm/brcmfmac4354-sdio.bin brcm/brcmfmac4354-sdio.google,veyron-mickey-rev8.bin
+    
+    ## WEEE IDK if firmware-realtek package provides enough support... e.g. rtl8153a-4 support may still be missing 
+    #[ -d rtl_nic ] || mkdir rtl_nic 
+    #cp -t rtl_nic $RESOURCES/rtl_nic/*
+    
+    ## useless IDK
+    [ -d tpm ] || mkdir tpm 
+    cp -rt tpm $RESOURCES/tpm/*
 
+    #cp $RESOURCES/regulatory.db .
+    #cp $RESOURCES/regulatory.db.p7s .
     make -j $(($(nproc) +1))  CROSS_COMPILE=$CROSS_COMPILER ARCH=$KERNEL_ARCH $IMAGE
     make -j $(($(nproc) +1))  CROSS_COMPILE=$CROSS_COMPILER ARCH=$KERNEL_ARCH DTC_FLAGS="-@" dtbs
     mkimage -D "-I dts -O dtb -p 2048" -f kernel.its vmlinux.uimg

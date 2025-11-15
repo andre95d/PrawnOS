@@ -241,6 +241,7 @@ export DEBIAN_FRONTEND=noninteractive
 printf -v debootstrap_debs_install_joined '%s,' "${debootstrap_debs_install[@]}"
 sudo debootstrap --arch=$TARGET_ARCH \
                  --include=${debootstrap_debs_install_joined%,} \
+                 --keyring=$build_resources_apt/debian-archive-keyring.gpg \
                  --cache-dir=$PRAWNOS_BUILD/debootstrap-apt-cache/ \
                  $DEBIAN_SUITE \
                  $outmnt \
